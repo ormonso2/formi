@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
+import Image from 'next/image';
 
 interface StripeCheckoutButtonProps {
   priceId: string;
@@ -76,7 +77,20 @@ export function StripeCheckoutButton({
       }}
     >
       {isLoading ? (
-        <Loader2 className="w-5 h-5 animate-spin" />
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          className="w-5 h-5"
+        >
+          <Image
+            src="/2.png"
+            alt="Cargando"
+            width={20}
+            height={20}
+            className="object-contain invert"
+            priority
+          />
+        </motion.div>
       ) : (
         <>
           Suscribirse — {planName}

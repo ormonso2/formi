@@ -3,8 +3,9 @@
 import { motion } from 'framer-motion';
 import { ProgressTracker } from './ProgressTracker';
 import { getIconForType, typeColorMap } from '@/components/upload/FilePreview';
-import { ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { ConversionStatus } from '@/types/conversion';
+import Image from 'next/image';
 
 interface ConversionCardProps {
   originalName: string;
@@ -97,7 +98,20 @@ export function ConversionCard({
               <span className="text-[#EF4444] text-lg font-bold">!</span>
             </div>
           ) : (
-            <Loader2 className="w-8 h-8 text-[#19D3E6] animate-spin" />
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              className="w-8 h-8"
+            >
+              <Image
+                src="/2.png"
+                alt="Procesando"
+                width={32}
+                height={32}
+                className="object-contain"
+                priority
+              />
+            </motion.div>
           )}
           <ArrowRight className="w-5 h-5 text-[rgba(255,255,255,0.3)] mt-1" />
         </div>

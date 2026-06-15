@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Download, Check, Loader2 } from 'lucide-react';
+import { Download, Check } from 'lucide-react';
+import Image from 'next/image';
 
 interface DownloadButtonProps {
   jobId: string;
@@ -55,7 +56,20 @@ export function DownloadButton({ jobId, fileName, targetFormat }: DownloadButton
     >
       {isDownloading ? (
         <>
-          <Loader2 className="w-5 h-5 animate-spin" />
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            className="w-5 h-5"
+          >
+            <Image
+              src="/2.png"
+              alt="Descargando"
+              width={20}
+              height={20}
+              className="object-contain invert"
+              priority
+            />
+          </motion.div>
           Descargando...
         </>
       ) : isDownloaded ? (

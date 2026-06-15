@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, GraduationCap, Upload, CheckCircle, Loader2, ArrowLeft } from 'lucide-react';
+import { X, GraduationCap, Upload, CheckCircle, ArrowLeft } from 'lucide-react';
+import Image from 'next/image';
 
 interface StudentOfferProps {
   isOpen: boolean;
@@ -200,7 +201,20 @@ export function StudentOffer({ isOpen, onClose }: StudentOfferProps) {
                   >
                     {isSubmitting ? (
                       <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                          className="w-5 h-5"
+                        >
+                          <Image
+                            src="/2.png"
+                            alt="Verificando"
+                            width={20}
+                            height={20}
+                            className="object-contain invert"
+                            priority
+                          />
+                        </motion.div>
                         Verificando...
                       </>
                     ) : (
