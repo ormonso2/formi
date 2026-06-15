@@ -4,11 +4,8 @@ import { prisma } from '@/lib/prisma';
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   const payload = await request.text();
