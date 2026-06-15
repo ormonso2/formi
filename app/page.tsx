@@ -10,29 +10,30 @@ import { FilePreview } from '@/components/upload/FilePreview';
 import { FormatSelector } from '@/components/upload/FormatSelector';
 import { StatsBar } from '@/components/dashboard/StatsBar';
 import { UploadResponse } from '@/types/conversion';
-import { ArrowRight, X, Target, Zap, Gem, Shield, Pencil } from 'lucide-react';
+import { ArrowRight, X, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
+import { PrecisionIcon, SpeedIcon, QualityIcon, SecurityIcon } from '@/components/icons/FeatureIcons';
 
 const supportedFormats = ['PDF', 'DOCX', 'XLSX', 'PPTX', 'PNG', 'JPG', 'WebP', 'CSV', 'JSON', 'XML', 'SVG', 'GIF', 'TXT', 'MD'];
 
 const features = [
   {
-    icon: Target,
+    Icon: PrecisionIcon,
     title: 'Precisión',
     description: 'Conversión exacta, sin alteraciones. Cada pixel, cada dato preservado.',
   },
   {
-    icon: Zap,
+    Icon: SpeedIcon,
     title: 'Velocidad',
     description: 'Procesos rápidos, resultados inmediatos. Conversiones en segundos.',
   },
   {
-    icon: Gem,
+    Icon: QualityIcon,
     title: 'Calidad',
     description: 'Mantiene la integridad de cada archivo. Sin pérdida de información.',
   },
   {
-    icon: Shield,
+    Icon: SecurityIcon,
     title: 'Confianza',
     description: 'Seguridad de nivel empresarial. Tus archivos están protegidos.',
   },
@@ -314,7 +315,7 @@ export default function HomePage() {
                   border: '1px solid rgba(25, 211, 230, 0.25)',
                 }}
               >
-                <feature.icon className="w-6 h-6 text-[#19D3E6]" />
+                <feature.Icon className="w-6 h-6 text-[#19D3E6]" />
               </div>
               <h3 className="text-lg font-semibold text-white mb-3">{feature.title}</h3>
               <p className="text-sm text-body leading-relaxed">{feature.description}</p>
