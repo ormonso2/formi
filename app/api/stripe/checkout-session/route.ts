@@ -15,18 +15,30 @@ export async function POST(request: NextRequest) {
     }
 
     const customer = await getStripeCustomer(email, name);
+    const finalUserId = userId || customer.id;
 
-    // Upsert subscription record
-    await prisma.subscription.upsert({
-      where: { userId: userId || customer.id },
-      update: { stripeCustomerId: customer.id },
-      create: {
-        userId: userId || customer.id,
-        stripeCustomerId: customer.id,
-        status: 'incomplete',
-        plan: 'pro',
-      },
+    // Find existing subscription for this user
+    const existingSub = await (prisma as any).subscription.findFirst({
+      where: { userId: finalUserId }
     });
+
+    if (existingSub) {
+      // Update existing
+      await (prisma as any).subscription.update({
+        where: { id: existingSub.id },
+        data: { stripeCustomerId: customer.id }
+      });
+    } else {
+      // Create new
+      await (prisma as any).subscription.create({
+        data: {
+          userId: finalUserId,
+          stripeCustomerId: customer.id,
+          status: 'incomplete',
+          plan: 'pro',
+        }
+      });
+    }
 
     const session = await stripe.checkout.sessions.create({
       customer: customer.id,
@@ -40,7 +52,7 @@ export async function POST(request: NextRequest) {
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment/cancel`,
       metadata: {
-        userId: userId || customer.id,
+        userId: finalUserId,
       },
     });
 
