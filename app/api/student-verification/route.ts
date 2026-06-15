@@ -88,7 +88,7 @@ async function sendVerificationEmail(email: string, name: string, token: string)
   // TODO: Integrar con servicio de email real
   // Ejemplo con Resend:
   // await resend.emails.send({
-  //   from: 'FORMI <noreply@formi.com>',
+  //   from: 'FORMI <noreply@formi.space>',
   //   to: email,
   //   subject: 'Verifica tu cuenta de estudiante FORMI',
   //   html: `<p>Hola ${name},</p><p>Click para verificar: <a href="${verifyUrl}">${verifyUrl}</a></p>`
