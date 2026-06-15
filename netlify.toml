@@ -1,0 +1,28 @@
+[build]
+  command = "prisma generate && next build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NPM_FLAGS = "--legacy-peer-deps"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Redirects for Stripe return URLs
+[[redirects]]
+  from = "/payment/success"
+  to = "/payment/success"
+  status = 200
+
+[[redirects]]
+  from = "/payment/cancel"
+  to = "/payment/cancel"
+  status = 200
+
+# API routes need to be handled by Next.js
+[[redirects]]
+  from = "/api/*"
+  to = "/api/:splat"
+  status = 200
+  force = true
