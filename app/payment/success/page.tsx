@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { CheckCircle, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 function PaymentContent() {
   const searchParams = useSearchParams();
@@ -21,7 +22,20 @@ function PaymentContent() {
     <>
       {status === 'verifying' ? (
         <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 rounded-full border-2 border-[#19D3E6] border-t-transparent animate-spin" />
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            className="w-16 h-16"
+          >
+            <Image
+              src="/2.png"
+              alt="Verificando"
+              width={64}
+              height={64}
+              className="object-contain"
+              priority
+            />
+          </motion.div>
           <p className="text-white font-medium">Verificando tu pago...</p>
         </div>
       ) : (
@@ -74,7 +88,20 @@ export default function PaymentSuccessPage() {
       >
         <Suspense fallback={
           <div className="flex flex-col items-center gap-4">
-            <div className="w-16 h-16 rounded-full border-2 border-[#19D3E6] border-t-transparent animate-spin" />
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              className="w-16 h-16"
+            >
+              <Image
+                src="/2.png"
+                alt="Cargando"
+                width={64}
+                height={64}
+                className="object-contain"
+                priority
+              />
+            </motion.div>
             <p className="text-white font-medium">Cargando...</p>
           </div>
         }>

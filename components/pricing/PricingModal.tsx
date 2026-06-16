@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check, Rocket, Target, Gift, Building2, GraduationCap } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 import { FormiLogo } from '@/components/brand/FormiLogo';
 import { EnterpriseForm } from './EnterpriseForm';
 import { StudentOffer } from './StudentOffer';
 import { StripeCheckoutButton } from './StripeCheckoutButton';
+import { GiftIcon, StudentIcon, StarterIcon, ProIcon, EnterpriseIcon } from '@/components/icons/PricingIcons';
 
 interface PricingModalProps {
   isOpen: boolean;
@@ -20,12 +21,12 @@ const plans = [
     currency: 'MXN',
     period: '/mes',
     description: 'Perfecto para empezar',
-    icon: Gift,
+    Icon: GiftIcon,
     color: '#22C55E',
     features: [
       '10 conversiones/mes',
-      'Máximo 5MB por archivo',
-      'Formatos básicos (PDF, JPG, PNG)',
+      'Máximo 5MB',
+      'Formatos básicos',
       'Conversión estándar',
       'Soporte por email',
     ],
@@ -38,17 +39,17 @@ const plans = [
     currency: 'MXN',
     period: ' / 6 meses',
     description: 'Verificación requerida',
-    icon: GraduationCap,
+    Icon: StudentIcon,
     color: '#22C55E',
     features: [
-      'Plan Pro por 6 meses gratis',
+      'Plan Pro 6 meses gratis',
       'Conversiones ilimitadas',
-      'Máximo 100MB por archivo',
-      'Todos los formatos + API',
+      'Máximo 100MB',
+      'Todos los formatos',
       'Soporte prioritario',
-      'Requiere email institucional',
+      'Email institucional',
     ],
-    cta: 'Verificar como estudiante',
+    cta: 'Verificar',
     popular: false,
     isStudent: true,
     stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_STUDENT,
@@ -59,15 +60,15 @@ const plans = [
     currency: 'MXN',
     period: '/mes',
     description: 'Para usuarios activos',
-    icon: Rocket,
+    Icon: StarterIcon,
     color: '#19D3E6',
     features: [
       '100 conversiones/mes',
-      'Máximo 25MB por archivo',
+      'Máximo 25MB',
       'Todos los formatos',
       'Conversión prioritaria',
       'Soporte prioritario',
-      'Historial de 30 días',
+      'Historial 30 días',
       'Sin marca de agua',
     ],
     cta: 'Elegir Inicial',
@@ -80,18 +81,17 @@ const plans = [
     currency: 'MXN',
     period: '/mes',
     description: 'Para profesionales',
-    icon: Target,
+    Icon: ProIcon,
     color: '#F59E0B',
     features: [
       'Conversiones ilimitadas',
-      'Máximo 100MB por archivo',
+      'Máximo 100MB',
       'Todos los formatos + API',
-      'Conversión ultra-rápida',
+      'Ultra-rápido',
       'Soporte 24/7',
       'Historial ilimitado',
       'Sin marca de agua',
-      'Integraciones avanzadas',
-      'Equipo hasta 5 usuarios',
+      'Hasta 5 usuarios',
     ],
     cta: 'Elegir Pro',
     popular: false,
@@ -99,23 +99,23 @@ const plans = [
   },
   {
     name: 'Empresa',
-    price: 'Personalizado',
+    price: 'Consultar',
     currency: '',
     period: '',
-    description: 'Para grandes equipos',
-    icon: Building2,
+    description: 'Grandes equipos',
+    Icon: EnterpriseIcon,
     color: '#8B5CF6',
     features: [
-      'Todo lo del plan Pro',
+      'Todo del plan Pro',
       'Usuarios ilimitados',
       'API dedicada',
       'Soporte dedicado',
       'Personalización',
       'SLA garantizado',
-      'On-premise opcional',
-      'Auditoría y reportes',
+      'On-premise',
+      'Auditoría',
     ],
-    cta: 'Contactar ventas',
+    cta: 'Contactar',
     popular: false,
     isEnterprise: true,
   },
@@ -177,7 +177,7 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
                       e.currentTarget.style.transform = 'translateY(0)';
                     }}
                   >
-                    <GraduationCap className="w-4 h-4" />
+                    <StudentIcon size={16} />
                     ¿Eres estudiante? 6 meses gratis
                   </button>
                   <button
@@ -194,9 +194,9 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
             <div className="p-4 sm:p-6 md:p-8 max-h-[80vh] overflow-y-auto">
               {!showEnterpriseForm ? (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
                 {plans.map((plan, index) => {
-                  const Icon = plan.icon;
+                  const IconComponent = plan.Icon;
                   return (
                     <motion.div
                       key={plan.name}
@@ -236,7 +236,7 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
                           border: `1px solid ${plan.color}60`,
                         }}
                       >
-                        <Icon className="w-6 h-6" style={{ color: plan.color }} />
+                        <IconComponent size={24} color={plan.color} />
                       </div>
 
                       {/* Plan name */}

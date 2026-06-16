@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { FormiLogo } from '@/components/brand/FormiLogo'
-import { Mail, Lock, ArrowRight, Loader2 } from 'lucide-react'
+import { Mail, Lock, ArrowRight } from 'lucide-react'
+import Image from 'next/image'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -97,7 +98,20 @@ export default function LoginPage() {
             className="w-full btn-formi flex items-center justify-center gap-2"
           >
             {isLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                className="w-5 h-5"
+              >
+                <Image
+                  src="/2.png"
+                  alt="Cargando"
+                  width={20}
+                  height={20}
+                  className="object-contain invert"
+                  priority
+                />
+              </motion.div>
             ) : (
               <>
                 Iniciar sesión

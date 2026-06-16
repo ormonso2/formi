@@ -3,8 +3,9 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { CheckCircle, XCircle, Loader2, GraduationCap } from 'lucide-react';
+import { CheckCircle, XCircle, GraduationCap } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 function VerifyContent() {
   const searchParams = useSearchParams();
@@ -46,7 +47,20 @@ function VerifyContent() {
       >
         {status === 'loading' && (
           <div className="flex flex-col items-center gap-4">
-            <Loader2 className="w-12 h-12 text-[#22C55E] animate-spin" />
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              className="w-12 h-12"
+            >
+              <Image
+                src="/2.png"
+                alt="Verificando"
+                width={48}
+                height={48}
+                className="object-contain"
+                priority
+              />
+            </motion.div>
             <p className="text-white font-medium">{message}</p>
           </div>
         )}
@@ -114,7 +128,20 @@ export default function VerifyStudentPage() {
     <Suspense fallback={
       <div className="container-formi pt-32 sm:pt-40 pb-20 min-h-[60vh] flex items-center justify-center">
         <div className="glass-elevated rounded-3xl p-10 text-center">
-          <Loader2 className="w-10 h-10 text-[#22C55E] animate-spin mx-auto" />
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            className="w-10 h-10 mx-auto"
+          >
+            <Image
+              src="/2.png"
+              alt="Cargando"
+              width={40}
+              height={40}
+              className="object-contain"
+              priority
+            />
+          </motion.div>
           <p className="text-white mt-4">Cargando...</p>
         </div>
       </div>

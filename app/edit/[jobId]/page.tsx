@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback, useRef, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { FormiLogo } from '@/components/brand/FormiLogo';
 import { DocxEditor } from '@/components/editor/DocxEditor';
-import { Download, FileOutput, ArrowLeft, Loader2 } from 'lucide-react';
+import { Download, FileOutput, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function EditPage({ params }: { params: Promise<{ jobId: string }> }) {
   const { jobId } = use(params);
@@ -139,7 +140,20 @@ export default function EditPage({ params }: { params: Promise<{ jobId: string }
     return (
       <div className="flex items-center justify-center min-h-[80vh]">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-10 h-10 text-[#19D3E6] animate-spin" />
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            className="w-10 h-10"
+          >
+            <Image
+              src="/2.png"
+              alt="Cargando"
+              width={40}
+              height={40}
+              className="object-contain"
+              priority
+            />
+          </motion.div>
           <p className="text-sm text-[#C9D1D9]">Cargando documento...</p>
         </div>
       </div>
@@ -221,7 +235,22 @@ export default function EditPage({ params }: { params: Promise<{ jobId: string }
             className="w-full btn-glass flex items-center justify-between group"
           >
             <div className="flex items-center gap-2">
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin text-[#C9D1D9]" /> : <Download className="w-4 h-4 text-[#C9D1D9] group-hover:text-white transition-colors" />}
+              {isSaving ? (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  className="w-4 h-4"
+                >
+                  <Image
+                    src="/2.png"
+                    alt="Guardando"
+                    width={16}
+                    height={16}
+                    className="object-contain invert"
+                    priority
+                  />
+                </motion.div>
+              ) : <Download className="w-4 h-4 text-[#C9D1D9] group-hover:text-white transition-colors" />}
               <span>Guardar DOCX</span>
             </div>
           </button>
@@ -232,7 +261,22 @@ export default function EditPage({ params }: { params: Promise<{ jobId: string }
             className="w-full btn-formi flex items-center justify-between"
           >
             <div className="flex items-center gap-2">
-              {isConverting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileOutput className="w-4 h-4" />}
+              {isConverting ? (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  className="w-4 h-4"
+                >
+                  <Image
+                    src="/2.png"
+                    alt="Convirtiendo"
+                    width={16}
+                    height={16}
+                    className="object-contain invert"
+                    priority
+                  />
+                </motion.div>
+              ) : <FileOutput className="w-4 h-4" />}
               <span>Convertir a PDF</span>
             </div>
           </button>
