@@ -1,11 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { prisma } from '@/lib/prisma';
+import { createClient as createServerClient } from '@supabase/supabase-js';
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+
+function getAdminClient() {
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+}
+
+function getPlanFromPriceId(priceId: string): string {
+  const starterPriceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER;
+  const proPriceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO;
+  const studentPriceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_STUDENT;
+
+  if (priceId === starterPriceId) return 'starter';
+  if (priceId === proPriceId) return 'pro';
+  if (priceId === studentPriceId) return 'pro';
+  return 'free';
+}
 
 export async function POST(request: NextRequest) {
   const payload = await request.text();
@@ -20,6 +39,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: err.message }, { status: 400 });
   }
 
+  const supabase = getAdminClient();
+
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
@@ -28,18 +49,34 @@ export async function POST(request: NextRequest) {
         const subscriptionId = session.subscription;
 
         const subscription: any = await (stripe as any).subscriptions.retrieve(subscriptionId);
+        const priceId = subscription.items?.data?.[0]?.price?.id;
+        const planName = getPlanFromPriceId(priceId);
 
-        await (prisma as any).subscription.updateMany({
-          where: { stripeCustomerId: customerId },
-          data: {
-            stripeSubscriptionId: subscriptionId,
-            stripePriceId: subscription.items?.data?.[0]?.price?.id,
+        await supabase
+          .from('subscriptions')
+          .update({
+            stripe_subscription_id: subscriptionId,
+            stripe_price_id: priceId,
             status: subscription.status,
-            plan: 'pro',
-            currentPeriodStart: new Date(subscription.current_period_start * 1000),
-            currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-          },
-        });
+            plan: planName,
+            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          })
+          .eq('stripe_customer_id', customerId);
+
+        // Update user plan in profiles
+        const { data: sub } = await supabase
+          .from('subscriptions')
+          .select('user_id')
+          .eq('stripe_customer_id', customerId)
+          .single();
+
+        if (sub?.user_id) {
+          await supabase
+            .from('profiles')
+            .update({ plan: planName })
+            .eq('id', sub.user_id);
+        }
         break;
       }
 
@@ -50,40 +87,88 @@ export async function POST(request: NextRequest) {
 
         if (subscriptionId) {
           const subscription: any = await (stripe as any).subscriptions.retrieve(subscriptionId);
-          await (prisma as any).subscription.updateMany({
-            where: { stripeCustomerId: customerId },
-            data: {
+          const priceId = subscription.items?.data?.[0]?.price?.id;
+          const planName = getPlanFromPriceId(priceId);
+
+          await supabase
+            .from('subscriptions')
+            .update({
               status: subscription.status,
-              currentPeriodStart: new Date(subscription.current_period_start * 1000),
-              currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-            },
-          });
+              current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            })
+            .eq('stripe_customer_id', customerId);
+
+          const { data: sub } = await supabase
+            .from('subscriptions')
+            .select('user_id')
+            .eq('stripe_customer_id', customerId)
+            .single();
+
+          if (sub?.user_id) {
+            await supabase
+              .from('profiles')
+              .update({ plan: planName })
+              .eq('id', sub.user_id);
+          }
         }
         break;
       }
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object;
-        await (prisma as any).subscription.updateMany({
-          where: { stripeSubscriptionId: subscription.id },
-          data: {
+        const priceId = subscription.items?.data?.[0]?.price?.id;
+        const planName = getPlanFromPriceId(priceId);
+
+        await supabase
+          .from('subscriptions')
+          .update({
             status: subscription.status,
-            cancelAtPeriodEnd: subscription.cancel_at_period_end,
-            currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-          },
-        });
+            cancel_at_period_end: subscription.cancel_at_period_end,
+            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          })
+          .eq('stripe_subscription_id', subscription.id);
+
+        if (!subscription.cancel_at_period_end) {
+          const { data: sub } = await supabase
+            .from('subscriptions')
+            .select('user_id')
+            .eq('stripe_subscription_id', subscription.id)
+            .single();
+
+          if (sub?.user_id) {
+            await supabase
+              .from('profiles')
+              .update({ plan: planName })
+              .eq('id', sub.user_id);
+          }
+        }
         break;
       }
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object;
-        await (prisma as any).subscription.updateMany({
-          where: { stripeSubscriptionId: subscription.id },
-          data: {
+
+        await supabase
+          .from('subscriptions')
+          .update({
             status: 'canceled',
             plan: 'free',
-          },
-        });
+          })
+          .eq('stripe_subscription_id', subscription.id);
+
+        const { data: sub } = await supabase
+          .from('subscriptions')
+          .select('user_id')
+          .eq('stripe_subscription_id', subscription.id)
+          .single();
+
+        if (sub?.user_id) {
+          await supabase
+            .from('profiles')
+            .update({ plan: 'free' })
+            .eq('id', sub.user_id);
+        }
         break;
       }
     }

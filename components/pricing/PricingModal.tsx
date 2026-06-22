@@ -1,13 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { X, Check, Lock } from 'lucide-react';
 import { FormiLogo } from '@/components/brand/FormiLogo';
 import { EnterpriseForm } from './EnterpriseForm';
 import { StudentOffer } from './StudentOffer';
 import { StripeCheckoutButton } from './StripeCheckoutButton';
 import { GiftIcon, StudentIcon, StarterIcon, ProIcon, EnterpriseIcon } from '@/components/icons/PricingIcons';
+import { createClient } from '@/lib/supabase/client';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface PricingModalProps {
   isOpen: boolean;
@@ -32,27 +35,6 @@ const plans = [
     ],
     cta: 'Comenzar gratis',
     popular: false,
-  },
-  {
-    name: 'Estudiante',
-    price: '$0',
-    currency: 'MXN',
-    period: ' / 6 meses',
-    description: 'Verificación requerida',
-    Icon: StudentIcon,
-    color: '#22C55E',
-    features: [
-      'Plan Pro 6 meses gratis',
-      'Conversiones ilimitadas',
-      'Máximo 100MB',
-      'Todos los formatos',
-      'Soporte prioritario',
-      'Email institucional',
-    ],
-    cta: 'Verificar',
-    popular: false,
-    isStudent: true,
-    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_STUDENT,
   },
   {
     name: 'Inicial',
@@ -122,21 +104,66 @@ const plans = [
 ];
 
 export function PricingModal({ isOpen, onClose }: PricingModalProps) {
+  const router = useRouter();
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [userName, setUserName] = useState('');
   const [showEnterpriseForm, setShowEnterpriseForm] = useState(false);
   const [showStudentOffer, setShowStudentOffer] = useState(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      if (user) {
+        setUserName(user.user_metadata?.name || user.email?.split('@')[0] || '');
+      }
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+      if (session?.user) {
+        setUserName(session.user.user_metadata?.name || session.user.email?.split('@')[0] || '');
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handlePlanClick = (plan: any) => {
+    if (!user) {
+      setShowAuthPrompt(true);
+      return;
+    }
+
+    if (plan.isEnterprise) {
+      setShowEnterpriseForm(true);
+    } else if (plan.name === 'Gratuito') {
+      onClose();
+    }
+  };
+
+  const handleStudentClick = () => {
+    if (!user) {
+      setShowAuthPrompt(true);
+      return;
+    }
+    setShowStudentOffer(true);
+  };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ background: 'rgba(0, 0, 0, 0.80)' }}
-          onClick={onClose}
-        >
+    <>
+      <AnimatePresence mode="wait">
+        {isOpen && (
           <motion.div
+            key="pricing-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            style={{ background: 'rgba(0, 0, 0, 0.80)' }}
+            onClick={onClose}
+          >
+          <motion.div
+            key="modal-content"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
@@ -194,7 +221,7 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
             <div className="p-4 sm:p-6 md:p-8 max-h-[80vh] overflow-y-auto">
               {!showEnterpriseForm ? (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {plans.map((plan, index) => {
                   const IconComponent = plan.Icon;
                   return (
@@ -260,7 +287,7 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
                       {/* Features */}
                       <ul className="flex-1 space-y-3 mb-6">
                         {plan.features.map((feature, i) => (
-                          <li key={i} className="flex items-start gap-2">
+                          <li key={`${plan.name}-feature-${i}`} className="flex items-start gap-2">
                             <Check className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: plan.color }} />
                             <span className="text-sm" style={{ color: 'rgba(255, 255, 255, 0.85)' }}>
                               {feature}
@@ -274,39 +301,34 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
                         <StripeCheckoutButton
                           priceId={plan.stripePriceId}
                           planName={plan.name}
+                          email={user?.email}
+                          name={userName}
+                          userId={user?.id}
+                          color={plan.color}
                         />
                       ) : (
                         <button
-                          onClick={() => {
-                            if (plan.isEnterprise) setShowEnterpriseForm(true);
-                            else if (plan.isStudent) setShowStudentOffer(true);
-                          }}
+                          onClick={() => handlePlanClick(plan)}
                           className="w-full py-3 rounded-xl font-semibold transition-all duration-300"
                           style={{
                             background: plan.popular
                               ? 'linear-gradient(135deg, #19D3E6 0%, #0EA5B8 100%)'
                               : plan.isEnterprise
                               ? 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)'
-                              : plan.isStudent
-                              ? 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)'
                               : 'rgba(255, 255, 255, 0.1)',
-                            color: plan.popular || plan.isEnterprise || plan.isStudent ? '#0F1115' : '#FFFFFF',
-                            border: plan.popular || plan.isEnterprise || plan.isStudent ? 'none' : '1px solid rgba(255, 255, 255, 0.2)',
+                            color: plan.popular || plan.isEnterprise ? '#0F1115' : '#FFFFFF',
+                            border: plan.popular || plan.isEnterprise ? 'none' : '1px solid rgba(255, 255, 255, 0.2)',
                             boxShadow: plan.popular 
                               ? '0 4px 16px rgba(25, 211, 230, 0.35)' 
                               : plan.isEnterprise
                               ? '0 4px 16px rgba(139, 92, 246, 0.35)'
-                              : plan.isStudent
-                              ? '0 4px 16px rgba(34, 197, 94, 0.35)'
                               : 'none',
                           }}
                           onMouseEnter={(e) => {
-                            if (plan.popular || plan.isEnterprise || plan.isStudent) {
+                            if (plan.popular || plan.isEnterprise) {
                               e.currentTarget.style.transform = 'translateY(-2px)';
                               e.currentTarget.style.boxShadow = plan.isEnterprise 
                                 ? '0 8px 28px rgba(139, 92, 246, 0.5)'
-                                : plan.isStudent
-                                ? '0 8px 28px rgba(34, 197, 94, 0.5)'
                                 : '0 8px 28px rgba(25, 211, 230, 0.5)';
                             } else {
                               e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
@@ -314,12 +336,10 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
                             }
                           }}
                           onMouseLeave={(e) => {
-                            if (plan.popular || plan.isEnterprise || plan.isStudent) {
+                            if (plan.popular || plan.isEnterprise) {
                               e.currentTarget.style.transform = 'translateY(0)';
                               e.currentTarget.style.boxShadow = plan.isEnterprise
                                 ? '0 4px 16px rgba(139, 92, 246, 0.35)'
-                                : plan.isStudent
-                                ? '0 4px 16px rgba(34, 197, 94, 0.35)'
                                 : '0 4px 16px rgba(25, 211, 230, 0.35)';
                             } else {
                               e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
@@ -333,6 +353,47 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
                     </motion.div>
                   );
                 })}
+
+                {/* Student Promo Card */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4, duration: 0.5 }}
+                  onClick={handleStudentClick}
+                  className="relative rounded-2xl p-6 cursor-pointer group"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(22, 163, 74, 0.1) 100%)',
+                    backdropFilter: 'blur(20px)',
+                    border: '2px dashed rgba(34, 197, 94, 0.4)',
+                  }}
+                >
+                  <div className="flex items-center gap-4">
+                    <div
+                      className="w-14 h-14 rounded-xl flex items-center justify-center"
+                      style={{
+                        background: 'rgba(34, 197, 94, 0.2)',
+                        border: '1px solid rgba(34, 197, 94, 0.4)',
+                      }}
+                    >
+                      <StudentIcon size={28} color="#22C55E" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-white mb-1">¿Eres estudiante?</h3>
+                      <p className="text-sm" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                        Obtén el Plan Pro <span className="text-[#22C55E] font-semibold">6 meses gratis</span>
+                      </p>
+                    </div>
+                    <div
+                      className="px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-300 group-hover:scale-105"
+                      style={{
+                        background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
+                        color: '#0F1115',
+                      }}
+                    >
+                      Verificar →
+                    </div>
+                  </div>
+                </motion.div>
               </div>
 
                   {/* Footer note */}
@@ -349,12 +410,83 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
           </motion.div>
         </motion.div>
       )}
+      </AnimatePresence>
 
       {/* Student Offer Modal */}
-      <StudentOffer 
-        isOpen={showStudentOffer} 
-        onClose={() => setShowStudentOffer(false)} 
+      <StudentOffer
+        isOpen={showStudentOffer}
+        onClose={() => setShowStudentOffer(false)}
       />
-    </AnimatePresence>
+
+      {/* Auth Prompt Modal */}
+      <AnimatePresence mode="wait">
+        {showAuthPrompt && (
+          <motion.div
+            key="auth-prompt-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center"
+            style={{ background: 'rgba(0, 0, 0, 0.90)', backdropFilter: 'blur(8px)' }}
+            onClick={() => setShowAuthPrompt(false)}
+          >
+            <motion.div
+              key="auth-prompt-content"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="rounded-2xl p-8 max-w-md text-center mx-4"
+              style={{
+                background: 'rgba(15, 17, 21, 0.98)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                boxShadow: '0 0 60px rgba(0, 0, 0, 0.8)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5"
+                style={{ background: 'linear-gradient(135deg, rgba(25, 211, 230, 0.2) 0%, rgba(25, 211, 230, 0.05) 100%)', border: '1px solid rgba(25, 211, 230, 0.3)' }}
+              >
+                <Lock className="w-8 h-8 text-[#19D3E6]" />
+              </div>
+              <h3 className="text-2xl font-semibold text-white mb-3">Inicia sesión para continuar</h3>
+              <p className="text-base mb-8" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                Para seleccionar un plan y acceder a todas las funciones, necesitas una cuenta. Es gratis y solo toma un minuto.
+              </p>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => router.push('/login')}
+                  className="w-full py-3.5 rounded-xl font-semibold text-base transition-all duration-300"
+                  style={{
+                    background: 'linear-gradient(135deg, #19D3E6 0%, #0EA5B8 100%)',
+                    color: '#0F1115',
+                  }}
+                >
+                  Iniciar sesión
+                </button>
+                <button
+                  onClick={() => router.push('/register')}
+                  className="w-full py-3.5 rounded-xl font-semibold text-base transition-all duration-300"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    color: '#FFFFFF',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                  }}
+                >
+                  Crear cuenta gratis
+                </button>
+                <button
+                  onClick={() => setShowAuthPrompt(false)}
+                  className="text-sm py-2 mt-2"
+                  style={{ color: 'rgba(255, 255, 255, 0.5)' }}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

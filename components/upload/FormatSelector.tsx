@@ -62,7 +62,7 @@ export function FormatSelector({ formats, selected, onSelect }: FormatSelectorPr
                 border: '1px solid rgba(25, 211, 230, 0.25)',
               }}
             >
-              <Icon className="w-5 h-5" style={{ color }} />
+              <Icon className="w-5 h-5" color={color} />
             </div>
             
             <div className="flex-1">

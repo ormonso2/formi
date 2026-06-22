@@ -5,9 +5,31 @@ import path from 'path';
 import { createJob } from '@/lib/jobStore';
 import { detectFileType, MAX_FILE_SIZE } from '@/lib/fileDetector';
 import { getAvailableFormats } from '@/types/conversion';
+import { checkConversionLimit } from '@/lib/conversionLimits';
+import { getUser, getProfile } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getUser();
+    const profile = await getProfile();
+    const limitStatus = await checkConversionLimit(
+      user?.id || null,
+      profile?.plan || 'free'
+    );
+
+    if (!limitStatus.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Has alcanzado el límite de conversiones mensuales',
+          limit: limitStatus.limit,
+          used: limitStatus.used,
+          plan: limitStatus.plan,
+          upgradeRequired: true,
+        },
+        { status: 403 }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
 
@@ -58,6 +80,8 @@ export async function POST(request: NextRequest) {
       fileSizeMB: parseFloat((file.size / (1024 * 1024)).toFixed(2)),
       availableFormats,
       isDocx,
+      remainingConversions: limitStatus.remaining,
+      plan: limitStatus.plan,
     });
   } catch (error) {
     console.error('Upload error:', error);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { createClient as createServerClient } from '@supabase/supabase-js'
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,10 +13,18 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+
     // Buscar solicitud por token
-    const verification = await (prisma as any).studentVerification.findUnique({
-      where: { verificationToken: token }
-    })
+    const { data: verification } = await supabase
+      .from('student_verifications')
+      .select('*')
+      .eq('verification_token', token)
+      .single()
 
     if (!verification) {
       return NextResponse.json(
@@ -26,7 +34,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verificar expiración
-    if (verification.tokenExpiresAt && new Date() > new Date(verification.tokenExpiresAt)) {
+    if (verification.token_expires_at && new Date() > new Date(verification.token_expires_at)) {
       return NextResponse.json(
         { error: 'El enlace ha expirado. Solicita uno nuevo.' },
         { status: 410 }
@@ -34,7 +42,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Si ya está verificado
-    if (verification.emailVerified) {
+    if (verification.email_verified) {
       return NextResponse.json({
         success: true,
         message: 'Tu email ya fue verificado. Tu solicitud está en revisión manual.',
@@ -43,15 +51,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Marcar como verificado
-    await (prisma as any).studentVerification.update({
-      where: { id: verification.id },
-      data: {
-        emailVerified: true,
+    await supabase
+      .from('student_verifications')
+      .update({
+        email_verified: true,
         status: 'pending',
-      }
-    })
+      })
+      .eq('id', verification.id)
 
-    // TODO: Enviar notificación al admin
     console.log(`✅ Student email verified: ${verification.email}`)
 
     return NextResponse.json({
@@ -60,7 +67,7 @@ export async function GET(request: NextRequest) {
       student: {
         name: verification.name,
         email: verification.email,
-        school: verification.school,
+        school: verification.school_name,
       }
     })
 

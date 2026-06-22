@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { createClient as createServerClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 
 // Lista de dominios institucionales válidos
@@ -88,7 +88,7 @@ async function sendVerificationEmail(email: string, name: string, token: string)
   // TODO: Integrar con servicio de email real
   // Ejemplo con Resend:
   // await resend.emails.send({
-  //   from: 'FORMI <noreply@formi.space>',
+  //   from: 'FORMI <noreply@formi.fun>',
   //   to: email,
   //   subject: 'Verifica tu cuenta de estudiante FORMI',
   //   html: `<p>Hola ${name},</p><p>Click para verificar: <a href="${verifyUrl}">${verifyUrl}</a></p>`
@@ -128,19 +128,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+
     // Verificar si ya existe una solicitud
-    const existing = await (prisma as any).studentVerification.findFirst({
-      where: { email: email.toLowerCase() }
-    })
+    const { data: existing } = await supabase
+      .from('student_verifications')
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .single()
 
     if (existing) {
-      if (existing.emailVerified && existing.status === 'approved') {
+      if (existing.email_verified && existing.status === 'approved') {
         return NextResponse.json(
           { error: 'Ya tienes una cuenta de estudiante activa' },
           { status: 400 }
         )
       }
-      if (existing.emailVerified && existing.status === 'pending') {
+      if (existing.email_verified && existing.status === 'pending') {
         return NextResponse.json(
           { error: 'Tu solicitud ya fue verificada y está en revisión manual' },
           { status: 400 }
@@ -153,26 +161,20 @@ export async function POST(request: NextRequest) {
     const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 horas
 
     // Crear o actualizar la solicitud
-    const verification = await (prisma as any).studentVerification.upsert({
-      where: { email: email.toLowerCase() },
-      update: {
-        name,
-        school,
-        studentId,
-        verificationToken: token,
-        tokenExpiresAt,
-        status: 'pending',
-      },
-      create: {
+    const { data: verification } = await supabase
+      .from('student_verifications')
+      .upsert({
+        id: existing?.id || crypto.randomUUID(),
         name,
         email: email.toLowerCase(),
-        school,
-        studentId,
-        verificationToken: token,
-        tokenExpiresAt,
+        school_name: school,
+        student_id: studentId,
+        verification_token: token,
+        token_expires_at: tokenExpiresAt.toISOString(),
         status: 'pending',
-      },
-    })
+      })
+      .select()
+      .single()
 
     // Enviar email de verificación
     await sendVerificationEmail(email, name, token)

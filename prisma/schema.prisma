@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Account {
@@ -111,4 +112,19 @@ model Subscription {
   updatedAt            DateTime @updatedAt @map("updated_at")
 
   @@map("subscriptions")
+}
+
+model Conversion {
+  id         String   @id @default(cuid())
+  userId     String?  @map("user_id")
+  jobId      String   @map("job_id")
+  status     String   @default("completed")
+  fileType   String?  @map("file_type")
+  fileSize   Int?     @map("file_size_bytes")
+  createdAt  DateTime @default(now()) @map("created_at")
+  yearMonth  String   @map("year_month")
+
+  @@index([userId, yearMonth])
+  @@index([createdAt])
+  @@map("conversions")
 }

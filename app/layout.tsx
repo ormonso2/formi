@@ -4,6 +4,7 @@ import "./globals.css";
 import { Background } from "@/components/layout/Background";
 import { Header } from "@/components/layout/Header";
 import { Toaster } from "sonner";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -56,21 +57,23 @@ export default function RootLayout({
           color: "#FFFFFF",
         }}
       >
-        <Background />
-        <Header />
-        <main className="flex-1 pt-32 sm:pt-40">{children}</main>
-        <Toaster
-          position="bottom-right"
-          toastOptions={{
-            className: 'glass',
-            style: {
-              background: 'rgba(18, 22, 27, 0.95)',
-              border: '1px solid rgba(255, 255, 255, 0.09)',
-              color: '#FFFFFF',
-              fontFamily: "'Sora', sans-serif",
-            },
-          }}
-        />
+        <AuthProvider>
+          <Background />
+          <Header />
+          <main className="flex-1 pt-32 sm:pt-40">{children}</main>
+          <Toaster
+            position="bottom-right"
+            toastOptions={{
+              className: 'glass',
+              style: {
+                background: 'rgba(18, 22, 27, 0.95)',
+                border: '1px solid rgba(255, 255, 255, 0.09)',
+                color: '#FFFFFF',
+                fontFamily: "'Sora', sans-serif",
+              },
+            }}
+          />
+        </AuthProvider>
       </body>
     </html>
   );

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getJob, updateJob } from '@/lib/jobStore';
 import { runConversion } from '@/lib/converters';
 import path from 'path';
+import { recordConversion } from '@/lib/conversionLimits';
+import { getUser } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,6 +24,9 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    // Get user session for tracking
+    const user = await getUser();
 
     // Update job status
     updateJob(jobId, {
@@ -63,6 +68,14 @@ export async function POST(request: NextRequest) {
           outputPath,
         });
         console.log('Job marked as done:', jobId);
+
+        // Record conversion for tracking
+        await recordConversion(
+          user?.id || null,
+          jobId,
+          job.originalType,
+          job.originalSize || 0
+        );
       } catch (error) {
         console.error('Conversion error for job:', jobId, error);
         console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');

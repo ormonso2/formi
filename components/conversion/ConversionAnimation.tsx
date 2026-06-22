@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { FileText, Image as ImageIcon, FileSpreadsheet, Database, FileJson, Layers } from 'lucide-react';
+import { PdfIcon, DocIcon, ImageIcon, SpreadsheetIcon, CodeIcon, JsonIcon, PresentationIcon, FileIcon } from '@/components/icons/FileIcons';
 import Image from 'next/image';
 
 interface ConversionAnimationProps {
@@ -28,11 +28,14 @@ export function ConversionAnimation({ progress, sourceFormat, targetFormat, isCo
 
   const getIconForFormat = (format: string) => {
     const lowerFormat = format.toLowerCase();
-    if (['jpg', 'jpeg', 'png', 'webp', 'avif', 'gif', 'svg'].includes(lowerFormat)) return ImageIcon;
-    if (['pdf', 'docx', 'txt', 'md', 'html'].includes(lowerFormat)) return FileText;
-    if (['xlsx', 'csv'].includes(lowerFormat)) return FileSpreadsheet;
-    if (['json', 'xml', 'yaml'].includes(lowerFormat)) return FileJson;
-    return FileText;
+    if (['jpg', 'jpeg', 'png', 'webp', 'avif', 'gif', 'svg', 'bmp', 'tiff', 'heic'].includes(lowerFormat)) return ImageIcon;
+    if (['pdf'].includes(lowerFormat)) return PdfIcon;
+    if (['docx', 'doc', 'odt', 'rtf', 'txt', 'md'].includes(lowerFormat)) return DocIcon;
+    if (['xlsx', 'xls', 'csv', 'ods'].includes(lowerFormat)) return SpreadsheetIcon;
+    if (['html', 'htm', 'xml'].includes(lowerFormat)) return CodeIcon;
+    if (['json', 'yaml', 'yml'].includes(lowerFormat)) return JsonIcon;
+    if (['pptx', 'ppt', 'odp'].includes(lowerFormat)) return PresentationIcon;
+    return FileIcon;
   };
 
   const SourceIcon = getIconForFormat(sourceFormat);
@@ -100,7 +103,7 @@ export function ConversionAnimation({ progress, sourceFormat, targetFormat, isCo
               border: '2px solid rgba(255, 255, 255, 0.2)',
             }}
           >
-            <SourceIcon className="w-8 h-8 text-white" />
+            <SourceIcon size={32} color="#FFFFFF" />
           </div>
           <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 text-xs font-semibold text-white">
             {sourceFormat.toUpperCase()}
@@ -155,7 +158,7 @@ export function ConversionAnimation({ progress, sourceFormat, targetFormat, isCo
                 : '2px solid rgba(255, 255, 255, 0.1)',
             }}
           >
-            <TargetIcon className={`w-8 h-8 ${isComplete ? 'text-[#19D3E6]' : 'text-white'}`} />
+            <TargetIcon size={32} color={isComplete ? '#19D3E6' : '#FFFFFF'} />
           </div>
           <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 text-xs font-semibold text-white">
             {targetFormat.toUpperCase()}

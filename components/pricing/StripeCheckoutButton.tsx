@@ -12,6 +12,7 @@ interface StripeCheckoutButtonProps {
   name?: string;
   userId?: string;
   planName: string;
+  color?: string;
 }
 
 export function StripeCheckoutButton({
@@ -20,6 +21,7 @@ export function StripeCheckoutButton({
   name,
   userId,
   planName,
+  color = '#19D3E6',
 }: StripeCheckoutButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -63,6 +65,14 @@ export function StripeCheckoutButton({
     }
   };
 
+  // Extract RGB values for shadow
+  const getRGBFromHex = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '25, 211, 230';
+  };
+
+  const rgb = getRGBFromHex(color);
+
   return (
     <motion.button
       whileHover={{ scale: 1.02 }}
@@ -71,9 +81,9 @@ export function StripeCheckoutButton({
       disabled={isLoading}
       className="w-full py-3 px-6 rounded-xl font-semibold text-sm transition-all duration-250 flex items-center justify-center gap-2 disabled:opacity-50"
       style={{
-        background: 'linear-gradient(135deg, #19D3E6 0%, #0EA5B8 100%)',
+        background: `linear-gradient(135deg, ${color} 0%, ${color}dd 100%)`,
         color: '#0F1115',
-        boxShadow: '0 4px 16px rgba(25, 211, 230, 0.35)',
+        boxShadow: `0 4px 16px rgba(${rgb}, 0.35)`,
       }}
     >
       {isLoading ? (

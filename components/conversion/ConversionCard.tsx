@@ -76,7 +76,7 @@ export function ConversionCard({
               border: `1px solid ${sourceColor}30`,
             }}
           >
-            <SourceIcon className="w-8 h-8" style={{ color: sourceColor }} />
+            <SourceIcon size={32} color={sourceColor} />
           </div>
           <span className="format-badge" style={{ color: sourceColor, borderColor: `${sourceColor}30` }}>
             {sourceFormat.toUpperCase()}
@@ -130,7 +130,7 @@ export function ConversionCard({
               border: `1px solid ${targetColor}30`,
             }}
           >
-            <TargetIcon className="w-8 h-8" style={{ color: targetColor }} />
+            <TargetIcon size={32} color={targetColor} />
           </div>
           <span className="format-badge" style={{ color: targetColor, borderColor: `${targetColor}30` }}>
             {targetFormat.toUpperCase()}

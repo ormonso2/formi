@@ -1,6 +1,6 @@
 'use client';
 
-import { FileText, Image, Table, Code, Braces, Presentation, type LucideProps } from 'lucide-react';
+import { PdfIcon, DocIcon, ImageIcon, SpreadsheetIcon, CodeIcon, JsonIcon, PresentationIcon, FileIcon } from '@/components/icons/FileIcons';
 
 interface FilePreviewProps {
   fileName: string;
@@ -8,16 +8,7 @@ interface FilePreviewProps {
   fileSizeMB: number;
 }
 
-type IconComponent = React.ComponentType<LucideProps>;
-
-const iconMap: Record<string, IconComponent> = {
-  FileText,
-  Image,
-  Table,
-  Code,
-  Braces,
-  Presentation,
-};
+type IconComponent = React.ComponentType<{ size?: number; color?: string; className?: string }>;
 
 const typeColorMap: Record<string, string> = {
   pdf: '#EF4444',
@@ -47,18 +38,22 @@ const typeColorMap: Record<string, string> = {
 };
 
 function getIconForType(type: string): IconComponent {
-  const imageTypes = ['jpg', 'jpeg', 'png', 'webp', 'avif', 'gif', 'tiff', 'svg', 'heic'];
+  const lowerType = type.toLowerCase();
+  const imageTypes = ['jpg', 'jpeg', 'png', 'webp', 'avif', 'gif', 'tiff', 'svg', 'heic', 'bmp'];
   const spreadsheetTypes = ['xlsx', 'xls', 'csv', 'ods'];
-  const codeTypes = ['html', 'xml'];
-  const dataTypes = ['json'];
-  const presentationTypes = ['pptx', 'ppt'];
+  const docTypes = ['docx', 'doc', 'odt', 'rtf'];
+  const codeTypes = ['html', 'htm', 'xml'];
+  const dataTypes = ['json', 'yaml', 'yml'];
+  const presentationTypes = ['pptx', 'ppt', 'odp'];
 
-  if (imageTypes.includes(type)) return Image;
-  if (spreadsheetTypes.includes(type)) return Table;
-  if (codeTypes.includes(type)) return Code;
-  if (dataTypes.includes(type)) return Braces;
-  if (presentationTypes.includes(type)) return Presentation;
-  return FileText;
+  if (lowerType === 'pdf') return PdfIcon;
+  if (docTypes.includes(lowerType)) return DocIcon;
+  if (imageTypes.includes(lowerType)) return ImageIcon;
+  if (spreadsheetTypes.includes(lowerType)) return SpreadsheetIcon;
+  if (codeTypes.includes(lowerType)) return CodeIcon;
+  if (dataTypes.includes(lowerType)) return JsonIcon;
+  if (presentationTypes.includes(lowerType)) return PresentationIcon;
+  return FileIcon;
 }
 
 export function FilePreview({ fileName, fileType, fileSizeMB }: FilePreviewProps) {
@@ -75,7 +70,7 @@ export function FilePreview({ fileName, fileType, fileSizeMB }: FilePreviewProps
           border: `1px solid ${color}30`,
         }}
       >
-        <Icon className="w-7 h-7" style={{ color }} />
+        <Icon size={28} color={color} />
       </div>
 
       {/* File info */}

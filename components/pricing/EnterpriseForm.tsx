@@ -41,6 +41,13 @@ export function EnterpriseForm({ onBack }: EnterpriseFormProps) {
       }
 
       setIsSubmitted(true);
+      
+      // Abrir WhatsApp con el mensaje generado
+      if (data.whatsappUrl) {
+        setTimeout(() => {
+          window.open(data.whatsappUrl, '_blank');
+        }, 1500);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -66,8 +73,11 @@ export function EnterpriseForm({ onBack }: EnterpriseFormProps) {
           <CheckCircle className="w-10 h-10 text-[#22C55E]" />
         </div>
         <h3 className="heading-md mb-4">¡Solicitud enviada!</h3>
-        <p className="text-body max-w-md mb-6">
-          Nuestro equipo de ventas se pondrá en contacto contigo en las próximas 24 horas.
+        <p className="text-body max-w-md mb-2">
+          Tu información ha sido registrada.
+        </p>
+        <p className="text-body max-w-md mb-6" style={{ color: '#19D3E6' }}>
+          Se abrirá WhatsApp en breve para que nos contactes directamente.
         </p>
         <button
           onClick={onBack}

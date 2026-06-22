@@ -1,23 +1,46 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FormiIcon } from '@/components/brand/FormiIcon';
-import { Upload, FolderOpen } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { FolderOpen, Lock } from 'lucide-react';
 import { UploadResponse } from '@/types/conversion';
+import Image from 'next/image';
+import { createClient } from '@/lib/supabase/client';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface DropZoneProps {
   onFileUploaded: (data: UploadResponse) => void;
 }
 
 export function DropZone({ onFileUploaded }: DropZoneProps) {
+  const router = useRouter();
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
+
+    // Check authentication first
+    if (!user) {
+      setShowAuthPrompt(true);
+      return;
+    }
 
     const file = acceptedFiles[0];
 
@@ -111,7 +134,20 @@ export function DropZone({ onFileUploaded }: DropZoneProps) {
               exit={{ opacity: 0, scale: 0.9 }}
               className="flex flex-col items-center gap-6"
             >
-              <Upload className="w-12 h-12 text-[#19D3E6] animate-pulse" />
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                className="w-24 h-24 sm:w-28 sm:h-28"
+              >
+                <Image
+                  src="/2.png"
+                  alt="Subiendo"
+                  width={112}
+                  height={112}
+                  className="object-contain"
+                  priority
+                />
+              </motion.div>
               <div className="text-center">
                 <p className="text-white font-semibold text-lg mb-2" style={{
                   textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)',
@@ -149,7 +185,37 @@ export function DropZone({ onFileUploaded }: DropZoneProps) {
               exit={{ opacity: 0, scale: 0.9 }}
               className="flex flex-col items-center gap-6"
             >
-              <FormiIcon size={64} animate={!isDragActive} />
+              {isDragActive ? (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                  className="w-28 h-28 sm:w-32 sm:h-32"
+                >
+                  <Image
+                    src="/2.png"
+                    alt="FORMI"
+                    width={128}
+                    height={128}
+                    className="object-contain"
+                    priority
+                  />
+                </motion.div>
+              ) : (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                  className="w-28 h-28 sm:w-32 sm:h-32"
+                >
+                  <Image
+                    src="/2.png"
+                    alt="FORMI"
+                    width={128}
+                    height={128}
+                    className="object-contain"
+                    priority
+                  />
+                </motion.div>
+              )}
 
               <div className="text-center">
                 <p className="text-white font-semibold text-xl mb-2" style={{
@@ -194,9 +260,10 @@ export function DropZone({ onFileUploaded }: DropZoneProps) {
         </AnimatePresence>
 
         {/* Error message */}
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
           {error && (
             <motion.div
+              key="error-message"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -212,6 +279,75 @@ export function DropZone({ onFileUploaded }: DropZoneProps) {
               >
                 {error}
               </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Auth Prompt Modal */}
+        <AnimatePresence mode="wait">
+          {showAuthPrompt && (
+            <motion.div
+              key="dropzone-auth-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-50 flex items-center justify-center rounded-2xl"
+              style={{ background: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(8px)' }}
+              onClick={() => setShowAuthPrompt(false)}
+            >
+              <motion.div
+                key="dropzone-auth-content"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="rounded-2xl p-6 max-w-sm text-center mx-4"
+                style={{
+                  background: 'rgba(15, 17, 21, 0.95)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div
+                  className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4"
+                  style={{ background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)' }}
+                >
+                  <Lock className="w-7 h-7 text-[#22C55E]" />
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">Inicia sesión para continuar</h3>
+                <p className="text-sm mb-6" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                  Para convertir archivos, necesitas una cuenta. Es gratis y solo toma un minuto.
+                </p>
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => router.push('/login')}
+                    className="w-full py-3 rounded-xl font-semibold transition-all duration-300"
+                    style={{
+                      background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
+                      color: '#0F1115',
+                    }}
+                  >
+                    Iniciar sesión
+                  </button>
+                  <button
+                    onClick={() => router.push('/register')}
+                    className="w-full py-3 rounded-xl font-semibold transition-all duration-300"
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      color: '#FFFFFF',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                    }}
+                  >
+                    Crear cuenta
+                  </button>
+                  <button
+                    onClick={() => setShowAuthPrompt(false)}
+                    className="text-sm py-2"
+                    style={{ color: 'rgba(255, 255, 255, 0.5)' }}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>

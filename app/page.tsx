@@ -340,7 +340,7 @@ export default function HomePage() {
             Convierte archivos sin perder calidad.
           </p>
           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            formi.space
+            formi.fun
           </p>
         </div>
       </footer>

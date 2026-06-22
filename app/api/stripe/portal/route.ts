@@ -1,24 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { prisma } from '@/lib/prisma';
+import { createClient as createServerClient } from '@supabase/supabase-js';
+import { getUser } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { email } = body;
-
-    if (!email) {
+    const user = await getUser();
+    if (!user) {
       return NextResponse.json(
-        { error: 'Email requerido' },
-        { status: 400 }
+        { error: 'No autenticado' },
+        { status: 401 }
       );
     }
 
-    const subscription = await (prisma as any).subscription.findFirst({
-      where: { stripeCustomerId: { not: null } },
-    });
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
 
-    if (!subscription?.stripeCustomerId) {
+    const { data: subscription } = await supabase
+      .from('subscriptions')
+      .select('stripe_customer_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!subscription?.stripe_customer_id) {
       return NextResponse.json(
         { error: 'No se encontró suscripción' },
         { status: 404 }
@@ -26,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     const portalSession = await stripe.billingPortal.sessions.create({
-      customer: subscription.stripeCustomerId,
+      customer: subscription.stripe_customer_id,
       return_url: `${process.env.NEXT_PUBLIC_APP_URL}`,
     });
 

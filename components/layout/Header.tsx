@@ -1,17 +1,51 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { FormiLogo } from '@/components/brand/FormiLogo';
 import { PricingModal } from '@/components/pricing/PricingModal';
 import { SupportModal } from '@/components/support/SupportModal';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogOut, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createClient } from '@/lib/supabase/client';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 export function Header() {
+  const router = useRouter();
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [userName, setUserName] = useState<string>('');
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      if (user) {
+        setUserName(user.user_metadata?.name || user.email?.split('@')[0] || '');
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+      if (session?.user) {
+        setUserName(session.user.user_metadata?.name || session.user.email?.split('@')[0] || '');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setShowUserMenu(false);
+    router.push('/');
+    router.refresh();
+  };
 
   return (
     <>
@@ -59,12 +93,58 @@ export function Header() {
 
             {/* Desktop CTA */}
             <div className="hidden md:flex items-center gap-3">
-              <button 
-                onClick={() => setIsPricingOpen(true)}
-                className="btn-formi text-sm px-4 py-2"
-              >
-                Prueba gratis
-              </button>
+              {user ? (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-white/10 transition-colors"
+                  >
+                    <User className="w-4 h-4" />
+                    <span className="text-sm font-medium">{userName}</span>
+                  </button>
+                  <AnimatePresence>
+                    {showUserMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="absolute right-0 mt-2 w-48 rounded-xl overflow-hidden"
+                        style={{
+                          background: 'rgba(15, 17, 21, 0.95)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+                        }}
+                      >
+                        <Link
+                          href="/profile"
+                          className="flex items-center gap-2 px-4 py-3 text-sm hover:bg-white/10 transition-colors no-underline text-white"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          <User className="w-4 h-4" />
+                          Mi perfil
+                        </Link>
+                        <button
+                          onClick={() => {
+                            setShowUserMenu(false);
+                            handleSignOut();
+                          }}
+                          className="w-full flex items-center gap-2 px-4 py-3 text-sm hover:bg-white/10 transition-colors text-red-400 border-t border-white/10"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Cerrar sesión
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => setIsPricingOpen(true)}
+                  className="btn-formi text-sm px-4 py-2"
+                >
+                  Prueba gratis
+                </button>
+              )}
             </div>
 
             {/* Mobile Menu Button */}
