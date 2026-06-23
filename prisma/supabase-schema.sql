@@ -107,6 +107,25 @@ CREATE TABLE IF NOT EXISTS "student_verifications" (
     CONSTRAINT "student_verifications_pkey" PRIMARY KEY ("id")
 );
 
+-- Storage bucket for conversion files
+INSERT INTO storage.buckets (id, name, public, avif_autodetection, file_size_limit, allowed_mime_types)
+VALUES ('conversions', 'conversions', false, false, 104857600, null)
+ON CONFLICT (id) DO UPDATE SET public = false;
+
+-- Storage RLS policies: users can only access their own job files
+CREATE POLICY "Users can upload own conversion files"
+  ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'conversions' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+CREATE POLICY "Users can read own conversion files"
+  ON storage.objects FOR SELECT TO authenticated
+  USING (bucket_id = 'conversions' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+CREATE POLICY "Service role can manage conversion files"
+  ON storage.objects FOR ALL TO service_role
+  USING (bucket_id = 'conversions')
+  WITH CHECK (bucket_id = 'conversions');
+
 -- Grant service role access to all tables (for API routes using service role key)
 GRANT ALL ON "profiles" TO service_role;
 GRANT ALL ON "subscriptions" TO service_role;

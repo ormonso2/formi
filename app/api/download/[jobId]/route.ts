@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getJob } from '@/lib/jobStore';
 import { getMimeType } from '@/lib/fileDetector';
-import fs from 'fs/promises';
-import path from 'path';
+import { downloadFile } from '@/lib/supabase/storage';
 
 export async function GET(
   _request: NextRequest,
@@ -26,15 +25,15 @@ export async function GET(
   }
 
   try {
-    const buffer = await fs.readFile(job.outputPath);
-    const ext = path.extname(job.outputPath).replace('.', '') || job.targetFormat;
+    const buffer = await downloadFile(job.outputPath);
+    const ext = job.targetFormat;
     const mimeType = getMimeType(ext);
 
     // Build output filename
-    const baseName = path.parse(job.originalName).name;
+    const baseName = job.originalName.split('.').slice(0, -1).join('.') || job.originalName;
     const outputFilename = `${baseName}.${job.targetFormat}`;
 
-    return new NextResponse(buffer, {
+    return new NextResponse(new Uint8Array(buffer), {
       headers: {
         'Content-Type': mimeType,
         'Content-Disposition': `attachment; filename="${outputFilename}"`,

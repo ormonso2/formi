@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getJob, updateJob } from '@/lib/jobStore';
 import { runConversion } from '@/lib/converters';
 import path from 'path';
+import fs from 'fs/promises';
+import os from 'os';
 import { recordConversion } from '@/lib/conversionLimits';
 import { getUser } from '@/lib/supabase/server';
+import { downloadFileToLocal, uploadLocalFile } from '@/lib/supabase/storage';
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,25 +42,34 @@ export async function POST(request: NextRequest) {
     (async () => {
       try {
         console.log('Starting conversion for job:', jobId);
-        console.log('Input path:', job.inputPath);
+        console.log('Storage input path:', job.inputPath);
         console.log('Source format:', job.originalType);
         console.log('Target format:', targetFormat);
+
+        const tempDir = path.join(os.tmpdir(), 'formi', jobId);
+        await fs.mkdir(tempDir, { recursive: true });
+
+        const localInputPath = path.join(tempDir, path.basename(job.inputPath));
+        await downloadFileToLocal(job.inputPath, localInputPath);
+        console.log('Downloaded input to:', localInputPath);
         
         updateJob(jobId, { progress: 30 });
 
-        const outputDir = path.dirname(job.inputPath);
-        console.log('Output dir:', outputDir);
-        
         const outputPath = await runConversion(
-          job.inputPath,
-          outputDir,
+          localInputPath,
+          tempDir,
           job.originalType,
           targetFormat,
           options
         );
 
-        console.log('Conversion completed. Output path:', outputPath);
+        console.log('Conversion completed. Local output path:', outputPath);
         updateJob(jobId, { progress: 80 });
+
+        const userId = user?.id || 'anonymous';
+        const outputStoragePath = `${userId}/${jobId}/output.${targetFormat}`;
+        await uploadLocalFile(outputPath, outputStoragePath);
+        console.log('Uploaded output to:', outputStoragePath);
 
         // Small delay to simulate optimization step
         await new Promise(r => setTimeout(r, 500));
@@ -65,7 +77,7 @@ export async function POST(request: NextRequest) {
         updateJob(jobId, {
           status: 'done',
           progress: 100,
-          outputPath,
+          outputPath: outputStoragePath,
         });
         console.log('Job marked as done:', jobId);
 

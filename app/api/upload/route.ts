@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
-import fs from 'fs/promises';
-import path from 'path';
 import { createJob } from '@/lib/jobStore';
 import { detectFileType, MAX_FILE_SIZE } from '@/lib/fileDetector';
 import { getAvailableFormats } from '@/types/conversion';
 import { checkConversionLimit } from '@/lib/conversionLimits';
 import { getUser, getProfile } from '@/lib/supabase/server';
+import { uploadFile } from '@/lib/supabase/storage';
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,8 +44,6 @@ export async function POST(request: NextRequest) {
     }
 
     const jobId = nanoid(12);
-    const jobDir = path.join('/tmp', 'formi', jobId);
-    await fs.mkdir(jobDir, { recursive: true });
 
     // Read file to buffer
     const arrayBuffer = await file.arrayBuffer();
@@ -56,9 +53,11 @@ export async function POST(request: NextRequest) {
     const detectedType = await detectFileType(buffer, file.name);
     const ext = detectedType !== 'unknown' ? detectedType : file.name.split('.').pop()?.toLowerCase() || 'unknown';
 
-    // Save file
-    const inputPath = path.join(jobDir, `input.${ext}`);
-    await fs.writeFile(inputPath, buffer);
+    const userId = user?.id || 'anonymous';
+    const storagePath = `${userId}/${jobId}/input.${ext}`;
+
+    // Upload to Supabase Storage
+    await uploadFile(storagePath, buffer, file.type || 'application/octet-stream');
 
     // Create job
     createJob(jobId, {
@@ -66,7 +65,7 @@ export async function POST(request: NextRequest) {
       originalType: ext,
       originalSize: file.size,
       targetFormat: '',
-      inputPath,
+      inputPath: storagePath,
     });
 
     // Get available formats

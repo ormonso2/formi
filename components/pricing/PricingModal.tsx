@@ -41,6 +41,9 @@ const plans = [
     price: '$89',
     currency: 'MXN',
     period: '/mes',
+    annualPrice: '$80',
+    annualPeriod: '/mes',
+    annualTotal: '$960/año',
     description: 'Para usuarios activos',
     Icon: StarterIcon,
     color: '#19D3E6',
@@ -56,12 +59,16 @@ const plans = [
     cta: 'Elegir Inicial',
     popular: true,
     stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER,
+    stripePriceIdAnnual: process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER_ANNUAL,
   },
   {
     name: 'Pro',
     price: '$199',
     currency: 'MXN',
     period: '/mes',
+    annualPrice: '$179',
+    annualPeriod: '/mes',
+    annualTotal: '$2,149/año',
     description: 'Para profesionales',
     Icon: ProIcon,
     color: '#F59E0B',
@@ -78,6 +85,7 @@ const plans = [
     cta: 'Elegir Pro',
     popular: false,
     stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO,
+    stripePriceIdAnnual: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_ANNUAL,
   },
   {
     name: 'Empresa',
@@ -110,6 +118,7 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
   const [showEnterpriseForm, setShowEnterpriseForm] = useState(false);
   const [showStudentOffer, setShowStudentOffer] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const [isAnnual, setIsAnnual] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -186,6 +195,32 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
                   <p className="text-body">Elige el plan que mejor se adapte a tus necesidades</p>
                 </div>
                 <div className="flex items-center gap-3">
+                  {/* Billing Toggle */}
+                  <div className="flex items-center gap-2 p-1 rounded-xl" style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                    <button
+                      onClick={() => setIsAnnual(false)}
+                      className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200"
+                      style={{
+                        background: !isAnnual ? 'rgba(25, 211, 230, 0.2)' : 'transparent',
+                        color: !isAnnual ? '#19D3E6' : 'rgba(255, 255, 255, 0.6)',
+                      }}
+                    >
+                      Mensual
+                    </button>
+                    <button
+                      onClick={() => setIsAnnual(true)}
+                      className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1.5"
+                      style={{
+                        background: isAnnual ? 'rgba(25, 211, 230, 0.2)' : 'transparent',
+                        color: isAnnual ? '#19D3E6' : 'rgba(255, 255, 255, 0.6)',
+                      }}
+                    >
+                      Anual
+                      <span className="text-xs px-1.5 py-0.5 rounded-md" style={{ background: 'rgba(34, 197, 94, 0.2)', color: '#22C55E' }}>
+                        -10%
+                      </span>
+                    </button>
+                  </div>
                   {/* Student Offer Button */}
                   <button
                     onClick={() => setShowStudentOffer(true)}
@@ -274,13 +309,31 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
 
                       {/* Price */}
                       <div className="mb-6">
-                        <span className={`font-bold text-white ${plan.price === 'Personalizado' ? 'text-2xl' : 'text-4xl'}`}>
-                          {plan.price}
-                        </span>
-                        {plan.period && (
-                          <span className="text-sm ml-1" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-                            {plan.period}
-                          </span>
+                        {isAnnual && plan.annualPrice ? (
+                          <>
+                            <span className="font-bold text-white text-4xl">
+                              {plan.annualPrice}
+                            </span>
+                            <span className="text-sm ml-1" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+                              {plan.annualPeriod}
+                            </span>
+                            <div className="mt-1">
+                              <span className="text-xs" style={{ color: 'rgba(34, 197, 94, 0.9)' }}>
+                                {plan.annualTotal} · 10% descuento
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <span className={`font-bold text-white ${plan.price === 'Personalizado' ? 'text-2xl' : 'text-4xl'}`}>
+                              {plan.price}
+                            </span>
+                            {plan.period && (
+                              <span className="text-sm ml-1" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+                                {plan.period}
+                              </span>
+                            )}
+                          </>
                         )}
                       </div>
 
@@ -299,7 +352,7 @@ export function PricingModal({ isOpen, onClose }: PricingModalProps) {
                       {/* CTA Button */}
                       {plan.stripePriceId ? (
                         <StripeCheckoutButton
-                          priceId={plan.stripePriceId}
+                          priceId={isAnnual && plan.stripePriceIdAnnual ? plan.stripePriceIdAnnual : plan.stripePriceId}
                           planName={plan.name}
                           email={user?.email}
                           name={userName}
