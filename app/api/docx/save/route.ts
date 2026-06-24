@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     const storagePath = `anonymous/${savedJobId}/output.docx`;
     await uploadLocalFile(outputPath, storagePath);
 
-    createJob(savedJobId, {
+    await createJob(savedJobId, {
       originalName: filename || 'edited-document.docx',
       originalType: 'html',
       originalSize: arrayBuffer.byteLength,

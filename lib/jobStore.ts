@@ -26,7 +26,7 @@ function rowToJob(row: any): ConversionJob {
   };
 }
 
-export function createJob(id: string, data: Omit<ConversionJob, 'id' | 'status' | 'progress' | 'createdAt' | 'expiresAt'>): ConversionJob {
+export async function createJob(id: string, data: Omit<ConversionJob, 'id' | 'status' | 'progress' | 'createdAt' | 'expiresAt'>): Promise<ConversionJob> {
   const job: ConversionJob = {
     id,
     ...data,
@@ -36,8 +36,7 @@ export function createJob(id: string, data: Omit<ConversionJob, 'id' | 'status' 
     expiresAt: new Date(Date.now() + 3600000),
   };
 
-  // Fire-and-forget insert to Supabase
-  getAdminClient().from('jobs').insert({
+  const { error } = await getAdminClient().from('jobs').insert({
     id: job.id,
     original_name: job.originalName,
     original_type: job.originalType,
@@ -49,9 +48,9 @@ export function createJob(id: string, data: Omit<ConversionJob, 'id' | 'status' 
     output_path: job.outputPath ?? null,
     error: job.error ?? null,
     expires_at: job.expiresAt.toISOString(),
-  }).then(({ error }) => {
-    if (error) console.error('jobStore: insert error', error);
   });
+
+  if (error) throw new Error(`jobStore: insert error: ${error.message}`);
 
   return job;
 }

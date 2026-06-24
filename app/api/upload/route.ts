@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     await uploadFile(storagePath, buffer, file.type || 'application/octet-stream');
 
     // Create job
-    createJob(jobId, {
+    await createJob(jobId, {
       originalName: file.name,
       originalType: ext,
       originalSize: file.size,
