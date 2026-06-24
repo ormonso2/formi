@@ -49,8 +49,15 @@ export async function downloadFile(path: string): Promise<Buffer> {
 }
 
 export async function downloadFileToLocal(path: string, localPath: string): Promise<void> {
-  const buffer = await downloadFile(path);
-  await fs.writeFile(localPath, buffer);
+  try {
+    console.log('Storage: downloading', path, 'to', localPath);
+    const buffer = await downloadFile(path);
+    await fs.writeFile(localPath, buffer);
+    console.log('Storage: download complete, size:', buffer.length);
+  } catch (error) {
+    console.error('Storage: downloadFileToLocal failed for path:', path, error);
+    throw error;
+  }
 }
 
 export async function uploadLocalFile(

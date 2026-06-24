@@ -45,13 +45,15 @@ export async function POST(request: NextRequest) {
         console.log('Storage input path:', job.inputPath);
         console.log('Source format:', job.originalType);
         console.log('Target format:', targetFormat);
+        console.log('User ID:', user?.id);
 
         const tempDir = path.join(os.tmpdir(), 'formi', jobId);
         await fs.mkdir(tempDir, { recursive: true });
 
         const localInputPath = path.join(tempDir, path.basename(job.inputPath));
+        console.log('Downloading from Storage:', job.inputPath, 'to:', localInputPath);
         await downloadFileToLocal(job.inputPath, localInputPath);
-        console.log('Downloaded input to:', localInputPath);
+        console.log('Downloaded input successfully');
         
         updateJob(jobId, { progress: 30 });
 
