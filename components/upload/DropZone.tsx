@@ -36,8 +36,11 @@ export function DropZone({ onFileUploaded }: DropZoneProps) {
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
 
-    // Check authentication first
-    if (!user) {
+    // Re-check authentication fresh to avoid stale closure
+    const supabase = createClient();
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    setUser(currentUser);
+    if (!currentUser) {
       setShowAuthPrompt(true);
       return;
     }
@@ -85,7 +88,7 @@ export function DropZone({ onFileUploaded }: DropZoneProps) {
       setIsUploading(false);
       setUploadProgress(0);
     }
-  }, [onFileUploaded]);
+  }, [onFileUploaded, user]);
 
   const { getRootProps, getInputProps, isDragActive, isDragAccept } = useDropzone({
     onDrop,
