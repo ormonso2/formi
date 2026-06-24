@@ -6,7 +6,7 @@ export async function GET(
   { params }: { params: Promise<{ jobId: string }> }
 ) {
   const { jobId } = await params;
-  const job = getJob(jobId);
+  const job = await getJob(jobId);
 
   if (!job) {
     return NextResponse.json(
@@ -18,7 +18,7 @@ export async function GET(
   return NextResponse.json({
     status: job.status,
     progress: job.progress,
-    error: job.error || undefined,
+    error: job.error ?? undefined,
     originalName: job.originalName,
     originalType: job.originalType,
     targetFormat: job.targetFormat,

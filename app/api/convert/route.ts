@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const job = getJob(jobId);
+    const job = await getJob(jobId);
     if (!job) {
       return NextResponse.json(
         { error: 'Job no encontrado' },
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     const user = await getUser();
 
     // Update job status
-    updateJob(jobId, {
+    await updateJob(jobId, {
       targetFormat,
       status: 'processing',
       progress: 10,
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
         await downloadFileToLocal(job.inputPath, localInputPath);
         console.log('Downloaded input successfully');
         
-        updateJob(jobId, { progress: 30 });
+        await updateJob(jobId, { progress: 30 });
 
         const outputPath = await runConversion(
           localInputPath,
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
         );
 
         console.log('Conversion completed. Local output path:', outputPath);
-        updateJob(jobId, { progress: 80 });
+        await updateJob(jobId, { progress: 80 });
 
         const userId = user?.id || 'anonymous';
         const outputStoragePath = `${userId}/${jobId}/output.${targetFormat}`;
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
         // Small delay to simulate optimization step
         await new Promise(r => setTimeout(r, 500));
 
-        updateJob(jobId, {
+        await updateJob(jobId, {
           status: 'done',
           progress: 100,
           outputPath: outputStoragePath,
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         console.error('Conversion error for job:', jobId, error);
         console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-        updateJob(jobId, {
+        await updateJob(jobId, {
           status: 'error',
           error: error instanceof Error ? error.message : 'Error desconocido',
         });

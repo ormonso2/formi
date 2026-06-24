@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { jobId } = body;
 
-    const job = getJob(jobId);
+    const job = await getJob(jobId);
     if (!job) {
       return NextResponse.json({ error: 'Job no encontrado' }, { status: 404 });
     }

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
-import { createJob } from '@/lib/jobStore';
+import { createJob, updateJob } from '@/lib/jobStore';
+import { uploadLocalFile } from '@/lib/supabase/storage';
 import fs from 'fs/promises';
 import path from 'path';
+import os from 'os';
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const savedJobId = nanoid(12);
-    const jobDir = path.join('/tmp', 'formi', savedJobId);
+    const jobDir = path.join(os.tmpdir(), 'formi', savedJobId);
     await fs.mkdir(jobDir, { recursive: true });
 
     // Convert HTML to DOCX using html-docx-js
@@ -26,20 +28,22 @@ export async function POST(request: NextRequest) {
     const outputPath = path.join(jobDir, `output.docx`);
     await fs.writeFile(outputPath, Buffer.from(arrayBuffer));
 
+    const storagePath = `anonymous/${savedJobId}/output.docx`;
+    await uploadLocalFile(outputPath, storagePath);
+
     createJob(savedJobId, {
       originalName: filename || 'edited-document.docx',
       originalType: 'html',
       originalSize: arrayBuffer.byteLength,
       targetFormat: 'docx',
-      inputPath: outputPath,
+      inputPath: storagePath,
     });
 
     // Mark as done immediately since we already have the output
-    const { updateJob } = await import('@/lib/jobStore');
-    updateJob(savedJobId, {
+    await updateJob(savedJobId, {
       status: 'done',
       progress: 100,
-      outputPath,
+      outputPath: storagePath,
     });
 
     return NextResponse.json({ savedJobId });
