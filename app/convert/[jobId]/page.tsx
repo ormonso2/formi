@@ -25,6 +25,8 @@ export default function ConvertPage({ params }: { params: Promise<{ jobId: strin
   const router = useRouter();
   const [data, setData] = useState<StatusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [displayProgress, setDisplayProgress] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   const pollStatus = useCallback(async () => {
     try {
@@ -36,6 +38,23 @@ export default function ConvertPage({ params }: { params: Promise<{ jobId: strin
 
       const result: StatusResponse = await response.json();
       setData(result);
+      if (result.status === 'done' && !isAnimating) {
+        setIsAnimating(true);
+        let start = 0;
+        const duration = 1200;
+        const step = 10;
+        const timer = setInterval(() => {
+          start += step;
+          if (start >= 100) {
+            setDisplayProgress(100);
+            clearInterval(timer);
+          } else {
+            setDisplayProgress(start);
+          }
+        }, duration / (100 / step));
+      } else {
+        setDisplayProgress(result.progress);
+      }
 
       if (result.status === 'done' || result.status === 'error') {
         return false; // Stop polling
@@ -130,29 +149,36 @@ export default function ConvertPage({ params }: { params: Promise<{ jobId: strin
           className="glass-elevated rounded-2xl sm:rounded-3xl p-4 sm:p-8"
         >
           <div className="text-center mb-6">
-            <h2 className="heading-lg mb-2">Convirtiendo archivo</h2>
+            <motion.h2
+              key={data.status === 'done' ? 'done' : 'converting'}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="heading-lg mb-2"
+            >
+              {data.status === 'done' && displayProgress >= 100 ? '¡Archivo convertido!' : 'Convirtiendo archivo...'}
+            </motion.h2>
             <p className="text-body">
               {data.originalName} • {data.originalType.toUpperCase()} → {data.targetFormat.toUpperCase()}
             </p>
           </div>
           
           <ConversionAnimation
-            progress={data.progress}
+            progress={displayProgress}
             sourceFormat={data.originalType}
             targetFormat={data.targetFormat}
-            isComplete={data.status === 'done'}
+            isComplete={data.status === 'done' && displayProgress >= 100}
           />
           
-          {data.status === 'processing' && (
-            <motion.div
+          {data.status === 'done' && (
+            <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center mt-6"
+              className="text-center text-sm mt-2"
+              style={{ color: '#19D3E6' }}
             >
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                Procesando conversión... Esto puede tomar unos momentos.
-              </p>
-            </motion.div>
+              ✓ Listo — presiona descargar para obtener tu archivo
+            </motion.p>
           )}
         </motion.div>
 
