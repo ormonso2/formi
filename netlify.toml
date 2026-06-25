@@ -6,6 +6,18 @@
   NODE_VERSION = "22"
   NPM_FLAGS = "--legacy-peer-deps"
 
+[functions]
+  node_bundler = "nft"
+
+[functions."api/convert"]
+  timeout = 60
+
+[functions."api/upload"]
+  timeout = 60
+
+[functions."api/download"]
+  timeout = 60
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
