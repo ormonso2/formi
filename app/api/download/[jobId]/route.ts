@@ -26,12 +26,12 @@ export async function GET(
 
   try {
     const buffer = await downloadFile(job.outputPath);
-    const ext = job.targetFormat;
-    const mimeType = getMimeType(ext);
+    const outputExt = job.outputPath.split('.').pop() || job.targetFormat;
+    const mimeType = getMimeType(outputExt);
 
     // Build output filename
-    const baseName = job.originalName.split('.').slice(0, -1).join('.') || job.originalName;
-    const outputFilename = `${baseName}.${job.targetFormat}`;
+    const cleanBase = job.originalName.replace(/\.[a-z0-9]+$/i, '') || 'archivo';
+    const outputFilename = `${cleanBase}.${outputExt}`;
 
     return new NextResponse(new Uint8Array(buffer), {
       headers: {

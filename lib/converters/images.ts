@@ -200,32 +200,25 @@ export async function pdfToImage(
 }
 
 export async function imageToPdf(inputPath: string, outputDir: string): Promise<string> {
-  // Convert image to PDF by embedding in a single-page PDF-like approach
-  // Using sharp to get image buffer, then creating a basic wrapper
-  const outputPath = path.join(outputDir, 'output.pdf');
-  const imageBuffer = await sharp(inputPath).png().toBuffer();
+  return imagesToPdf([inputPath], outputDir);
+}
 
-  // Simple image-to-PDF: we'll create a basic HTML wrapper and note this as a simplified conversion
-  // For production, you'd use pdfkit or similar
-  const metadata = await sharp(inputPath).metadata();
-  const width = metadata.width || 800;
-  const height = metadata.height || 600;
-
-  // Use pdf-lib to create a proper PDF with the image
+export async function imagesToPdf(inputPaths: string[], outputDir: string): Promise<string> {
   const { PDFDocument } = await import('pdf-lib');
   const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([width, height]);
 
-  const pngImage = await pdfDoc.embedPng(imageBuffer);
-  page.drawImage(pngImage, {
-    x: 0,
-    y: 0,
-    width: width,
-    height: height,
-  });
+  for (const inputPath of inputPaths) {
+    const imageBuffer = await sharp(inputPath).png().toBuffer();
+    const metadata = await sharp(imageBuffer).metadata();
+    const width = metadata.width || 800;
+    const height = metadata.height || 600;
 
-  const pdfBytes = await pdfDoc.save();
-  await fs.writeFile(outputPath, pdfBytes);
+    const page = pdfDoc.addPage([width, height]);
+    const pngImage = await pdfDoc.embedPng(imageBuffer);
+    page.drawImage(pngImage, { x: 0, y: 0, width, height });
+  }
 
+  const outputPath = path.join(outputDir, 'output.pdf');
+  await fs.writeFile(outputPath, await pdfDoc.save());
   return outputPath;
 }

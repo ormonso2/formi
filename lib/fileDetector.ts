@@ -25,6 +25,7 @@ const EXTENSION_TO_MIME: Record<string, string> = {
   'yaml': 'application/x-yaml',
   'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   'ppt':  'application/vnd.ms-powerpoint',
+  'zip':  'application/zip',
 };
 
 const MIME_TO_EXTENSION: Record<string, string> = {};

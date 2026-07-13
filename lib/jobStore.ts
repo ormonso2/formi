@@ -21,6 +21,7 @@ function rowToJob(row: any): ConversionJob {
     inputPath: row.input_path,
     outputPath: row.output_path ?? undefined,
     error: row.error ?? undefined,
+    files: row.files ?? undefined,
     createdAt: new Date(row.created_at),
     expiresAt: new Date(row.expires_at),
   };
@@ -47,6 +48,7 @@ export async function createJob(id: string, data: Omit<ConversionJob, 'id' | 'st
     input_path: job.inputPath,
     output_path: job.outputPath ?? null,
     error: job.error ?? null,
+    files: job.files ?? null,
     expires_at: job.expiresAt.toISOString(),
   });
 
@@ -73,6 +75,7 @@ export async function updateJob(id: string, updates: Partial<ConversionJob>): Pr
   if (updates.targetFormat !== undefined) patch.target_format = updates.targetFormat;
   if (updates.outputPath !== undefined) patch.output_path = updates.outputPath;
   if (updates.error !== undefined) patch.error = updates.error;
+  if (updates.files !== undefined) patch.files = updates.files;
 
   const { data, error } = await getAdminClient()
     .from('jobs')

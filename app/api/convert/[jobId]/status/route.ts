@@ -22,5 +22,8 @@ export async function GET(
     originalName: job.originalName,
     originalType: job.originalType,
     targetFormat: job.targetFormat,
+    isMultiFile: (job.files?.length ?? 0) > 1,
+    fileCount: job.files?.length ?? 1,
+    files: job.files?.map(f => ({ name: f.name, type: f.type })) ?? undefined,
   });
 }

@@ -2,10 +2,17 @@
 
 import { PdfIcon, DocIcon, ImageIcon, SpreadsheetIcon, CodeIcon, JsonIcon, PresentationIcon, FileIcon } from '@/components/icons/FileIcons';
 
+interface UploadedFileInfo {
+  name: string;
+  type: string;
+  fileSizeMB: number;
+}
+
 interface FilePreviewProps {
   fileName: string;
   fileType: string;
   fileSizeMB: number;
+  files?: UploadedFileInfo[];
 }
 
 type IconComponent = React.ComponentType<{ size?: number; color?: string; className?: string }>;
@@ -56,44 +63,58 @@ function getIconForType(type: string): IconComponent {
   return FileIcon;
 }
 
-export function FilePreview({ fileName, fileType, fileSizeMB }: FilePreviewProps) {
+export function FilePreview({ fileName, fileType, fileSizeMB, files }: FilePreviewProps) {
   const Icon = getIconForType(fileType);
   const color = typeColorMap[fileType] || '#C9D1D9';
+  const isMultiFile = files && files.length > 1;
 
   return (
-    <div className="flex items-center gap-4 p-4 rounded-2xl glass">
-      {/* File icon */}
-      <div
-        className="w-14 h-14 rounded-xl flex items-center justify-center"
-        style={{
-          background: `${color}15`,
-          border: `1px solid ${color}30`,
-        }}
-      >
-        <Icon size={28} color={color} />
-      </div>
+    <div className="p-4 rounded-2xl glass">
+      <div className="flex items-center gap-4">
+        {/* File icon */}
+        <div
+          className="w-14 h-14 rounded-xl flex items-center justify-center"
+          style={{
+            background: `${color}15`,
+            border: `1px solid ${color}30`,
+          }}
+        >
+          <Icon size={28} color={color} />
+        </div>
 
-      {/* File info */}
-      <div className="flex-1 min-w-0">
-        <p className="text-white font-semibold text-sm truncate">
-          {fileName}
-        </p>
-        <div className="flex items-center gap-2 mt-1">
-          <span
-            className="format-badge"
-            style={{
-              color,
-              borderColor: `${color}30`,
-              background: `${color}12`,
-            }}
-          >
-            {fileType.toUpperCase()}
-          </span>
-          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            {fileSizeMB} MB
-          </span>
+        {/* File info */}
+        <div className="flex-1 min-w-0">
+          <p className="text-white font-semibold text-sm truncate">
+            {isMultiFile ? `${files.length} archivos` : fileName}
+          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <span
+              className="format-badge"
+              style={{
+                color,
+                borderColor: `${color}30`,
+                background: `${color}12`,
+              }}
+            >
+              {isMultiFile ? 'MULTI' : fileType.toUpperCase()}
+            </span>
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              {fileSizeMB} MB total
+            </span>
+          </div>
         </div>
       </div>
+
+      {isMultiFile && (
+        <div className="mt-3 space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
+          {files.map((f, i) => (
+            <div key={`${f.name}-${i}`} className="flex items-center justify-between text-xs" style={{ color: 'var(--text-muted)' }}>
+              <span className="truncate flex-1 pr-2">{f.name}</span>
+              <span className="whitespace-nowrap">{f.fileSizeMB} MB</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

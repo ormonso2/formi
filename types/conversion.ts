@@ -1,5 +1,14 @@
 export type ConversionStatus = 'idle' | 'uploading' | 'processing' | 'done' | 'error';
 
+export interface ConversionFile {
+  name: string;
+  type: string;
+  size: number;
+  inputPath: string;
+  outputPath?: string;
+  error?: string;
+}
+
 export interface ConversionJob {
   id: string;
   originalName: string;
@@ -11,6 +20,7 @@ export interface ConversionJob {
   inputPath: string;
   outputPath?: string;
   error?: string;
+  files?: ConversionFile[];
   createdAt: Date;
   expiresAt: Date;
 }
@@ -25,11 +35,19 @@ export interface ConversionOptions {
   compression?: 'none' | 'low' | 'medium' | 'high';
 }
 
+export interface UploadedFileInfo {
+  name: string;
+  type: string;
+  fileSizeMB: number;
+}
+
 export interface UploadResponse {
   jobId: string;
   fileName: string;
   fileType: string;
   fileSizeMB: number;
+  files: UploadedFileInfo[];
+  isMultiFile: boolean;
   availableFormats: FormatOption[];
   isDocx: boolean;
 }
@@ -121,4 +139,53 @@ export function getAvailableFormats(sourceType: string): FormatOption[] {
       bgColor: info?.bgColor || 'rgba(201, 209, 217, 0.12)',
     };
   });
+}
+
+export function getAvailableFormatsMultiFile(sourceTypes: string[]): FormatOption[] {
+  const types = sourceTypes.map(t => t.toLowerCase().replace('.', ''));
+  const allImages = types.length > 0 && types.every(t => ['jpg', 'jpeg', 'png', 'webp', 'avif', 'gif', 'tiff', 'svg', 'heic'].includes(t));
+
+  if (allImages) {
+    const zipTargets = new Set<string>();
+    for (const t of types) {
+      const targets = CONVERSION_MAP[t] || [];
+      targets.forEach(target => {
+        if (['jpg', 'jpeg', 'png', 'webp', 'avif', 'gif', 'tiff'].includes(target)) {
+          zipTargets.add(target);
+        }
+      });
+    }
+    const formats = Array.from(zipTargets).map(t => {
+      const info = FORMAT_INFO[t];
+      return {
+        value: t,
+        label: `${info?.label || t.toUpperCase()} (ZIP)`,
+        icon: info?.icon || 'Image',
+        description: `Todas las imágenes como ${info?.label || t.toUpperCase()} en ZIP`,
+        color: info?.color || '#C9D1D9',
+        bgColor: info?.bgColor || 'rgba(201, 209, 217, 0.12)',
+      };
+    });
+    const pdfInfo = FORMAT_INFO['pdf'];
+    formats.unshift({
+      value: 'pdf',
+      label: pdfInfo?.label || 'PDF',
+      icon: pdfInfo?.icon || 'FileText',
+      description: 'Todas las imágenes en un solo PDF',
+      color: pdfInfo?.color || '#EF4444',
+      bgColor: pdfInfo?.bgColor || 'rgba(239, 68, 68, 0.12)',
+    });
+    return formats;
+  }
+
+  // Fallback to common targets for same-type files
+  if (types.every(t => t === types[0])) {
+    return getAvailableFormats(types[0]);
+  }
+
+  return [];
+}
+
+export function isImageFormat(ext: string): boolean {
+  return ['jpg', 'jpeg', 'png', 'webp', 'avif', 'gif', 'tiff', 'svg', 'heic'].includes(ext.toLowerCase().replace('.', ''));
 }

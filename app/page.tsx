@@ -48,8 +48,10 @@ export default function HomePage() {
   const handleFileUploaded = (data: UploadResponse) => {
     setUploadData(data);
     setSelectedFormat(null);
-    toast.success('Archivo subido correctamente', {
-      description: `${data.fileName} (${data.fileSizeMB} MB)`,
+    toast.success(data.isMultiFile ? 'Archivos subidos correctamente' : 'Archivo subido correctamente', {
+      description: data.isMultiFile
+        ? `${data.files.length} archivos (${data.fileSizeMB} MB total)`
+        : `${data.fileName} (${data.fileSizeMB} MB)`,
     });
   };
 
@@ -191,6 +193,7 @@ export default function HomePage() {
                     fileName={uploadData.fileName}
                     fileType={uploadData.fileType}
                     fileSizeMB={uploadData.fileSizeMB}
+                    files={uploadData.files}
                   />
                 </div>
 

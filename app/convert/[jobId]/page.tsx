@@ -18,6 +18,9 @@ interface StatusResponse {
   originalName: string;
   originalType: string;
   targetFormat: string;
+  isMultiFile?: boolean;
+  fileCount?: number;
+  files?: { name: string; type: string }[];
 }
 
 export default function ConvertPage({ params }: { params: Promise<{ jobId: string }> }) {
@@ -156,11 +159,20 @@ export default function ConvertPage({ params }: { params: Promise<{ jobId: strin
               transition={{ duration: 0.4 }}
               className="heading-lg mb-2"
             >
-              {data.status === 'done' && displayProgress >= 100 ? '¡Archivo convertido!' : 'Convirtiendo archivo...'}
+              {data.status === 'done' && displayProgress >= 100
+                ? (data.isMultiFile ? '¡Archivos convertidos!' : '¡Archivo convertido!')
+                : (data.isMultiFile ? 'Convirtiendo archivos...' : 'Convirtiendo archivo...')}
             </motion.h2>
             <p className="text-body">
-              {data.originalName} • {data.originalType.toUpperCase()} → {data.targetFormat.toUpperCase()}
+              {data.isMultiFile
+                ? `${data.fileCount} archivos → ${data.targetFormat.toUpperCase()}`
+                : `${data.originalName} • ${data.originalType.toUpperCase()} → ${data.targetFormat.toUpperCase()}`}
             </p>
+            {data.isMultiFile && data.files && (
+              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                {data.files.map(f => f.name).join(', ')}
+              </p>
+            )}
           </div>
           
           <ConversionAnimation

@@ -45,11 +45,12 @@ export function DropZone({ onFileUploaded }: DropZoneProps) {
       return;
     }
 
-    const file = acceptedFiles[0];
+    const files = acceptedFiles;
 
     // Client-side size validation
-    if (file.size > 50 * 1024 * 1024) {
-      setError('El archivo excede el límite de 50MB');
+    const oversized = files.find(f => f.size > 50 * 1024 * 1024);
+    if (oversized) {
+      setError(`${oversized.name} excede el límite de 50MB`);
       return;
     }
 
@@ -60,11 +61,13 @@ export function DropZone({ onFileUploaded }: DropZoneProps) {
     try {
       // Simulate progress
       const progressInterval = setInterval(() => {
-        setUploadProgress(prev => Math.min(prev + 15, 85));
+        setUploadProgress(prev => Math.min(prev + 12, 85));
       }, 200);
 
       const formData = new FormData();
-      formData.append('file', file);
+      for (const file of files) {
+        formData.append('files', file);
+      }
 
       const response = await fetch('/api/upload', {
         method: 'POST',
@@ -75,7 +78,7 @@ export function DropZone({ onFileUploaded }: DropZoneProps) {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Error al subir el archivo');
+        throw new Error(data.error || 'Error al subir los archivos');
       }
 
       setUploadProgress(100);
@@ -92,7 +95,7 @@ export function DropZone({ onFileUploaded }: DropZoneProps) {
 
   const { getRootProps, getInputProps, isDragActive, isDragAccept } = useDropzone({
     onDrop,
-    multiple: false,
+    multiple: true,
     maxSize: 50 * 1024 * 1024,
     disabled: isUploading,
   });
@@ -156,7 +159,7 @@ export function DropZone({ onFileUploaded }: DropZoneProps) {
                   textShadow: '0 2px 4px rgba(0, 0, 0, 0.5)',
                   fontWeight: 700,
                   letterSpacing: '-0.02em'
-                }}>Subiendo archivo...</p>
+                }}>Subiendo archivos...</p>
                 <p className="text-sm" style={{ 
                   color: 'rgba(255, 255, 255, 0.9)',
                   textShadow: '0 1px 2px rgba(0, 0, 0, 0.4)',
@@ -227,7 +230,7 @@ export function DropZone({ onFileUploaded }: DropZoneProps) {
                   letterSpacing: '-0.02em'
                 }}>
                   {isDragActive
-                    ? '¡Suelta tu archivo aquí!'
+                    ? '¡Suelta tus archivos aquí!'
                     : 'Arrastra y suelta tus archivos aquí'}
                 </p>
                 <p className="text-sm" style={{ 
